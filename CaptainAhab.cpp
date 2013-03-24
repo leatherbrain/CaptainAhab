@@ -10,6 +10,7 @@
 int main() {
 	WhaleSoundRecognition w;
 	w.Init("/home/michael/Documents/Kaggle/Whale sounds/data/train/",
+			"/home/michael/Documents/Kaggle/Whale sounds/data/train.csv",
 			"/home/michael/Documents/Kaggle/Whale sounds/data/test/");
 	w.Train();
 	return 0;

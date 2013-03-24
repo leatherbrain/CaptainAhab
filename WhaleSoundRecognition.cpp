@@ -9,17 +9,15 @@
 #include "FeatureVector.h"
 
 #include <iostream>
+#include <fstream>
 #include <cassert>
 #define LIBAIFF_NOCOMPAT 1
 extern "C"
 {
 #include <libaiff/libaiff.h>
 }
+#include "xtract/libxtract.h"
 
-#include "boost/filesystem.hpp"
-#include "boost/regex.hpp"
-
-using namespace boost::filesystem;
 using namespace std;
 
 WhaleSoundRecognition::WhaleSoundRecognition() {
@@ -32,34 +30,47 @@ WhaleSoundRecognition::~WhaleSoundRecognition() {
 }
 
 void WhaleSoundRecognition::Init(const string & pathToTrainData,
+		const string & trainDataLabelsFilename,
 		const string & pathToTestData)
 {
 	pathToTrainingData_ = pathToTrainData;
 	pathToTestData_ = pathToTestData;
+	trainDataLabelsFilename_ = trainDataLabelsFilename;
 }
 
 void WhaleSoundRecognition::Train()
 {
-	// Get all filenames ending .aiff
-	path current_dir(pathToTrainingData_);
-	boost::regex pattern("train[0-9]+.aiff");
-	for (recursive_directory_iterator iter(current_dir), end;
-			iter != end;
-			++iter)
+	trainingData.clear();
+
+	ifstream trainDataFile(trainDataLabelsFilename_.c_str(), ios_base::in);
+
+	string currentLine;
+	getline(trainDataFile, currentLine);
+	while (trainDataFile.good() && !trainDataFile.eof())
 	{
-		string name = iter->path().leaf().string();
-		if (regex_match(name, pattern))
-			AddTrainingData(iter->path().string());
+		getline(trainDataFile, currentLine);
+		if (trainDataFile.good() && !trainDataFile.eof())
+		{
+			cout << currentLine << endl;
+			int commaPos = currentLine.find_first_of(',');
+			string filename = currentLine.substr(0,commaPos);
+			bool containsWhaleSound = currentLine[commaPos+1] == '1';
+			AddTrainingData(pathToTrainingData_ + filename, containsWhaleSound);
+		}
 	}
 }
 
-void WhaleSoundRecognition::AddTrainingData(const std::string & filename)
+void WhaleSoundRecognition::AddTrainingData(const std::string & filename,
+		bool containsWhaleSound)
 {
 	double * samples;
 	int nSamples;
 	GetRawSamples(filename, samples, nSamples);
 
-	GetFeatures(samples, nSamples);
+	FeatureVector f = GetFeatures(samples, nSamples);
+	trainingData.push_back(f);
+	trainingDataLabels.push_back(containsWhaleSound);
+	cout << filename << " " << containsWhaleSound << endl;
 	delete [] samples;
 }
 
@@ -69,18 +80,27 @@ void WhaleSoundRecognition::GetRawSamples(const std::string & filename,
 {
 	AIFF_Ref ref = AIFF_OpenFile(filename.c_str(), F_RDONLY);
 
+	if (!ref)
+	{
+		cout << "Failed to open " << filename << endl;
+		return;
+	}
+
 	nSamples = ref->nSamples;
+
 	// Our AIFF files have audio format LPCM and 16 bits per sample.
 	int16_t * samplesI = new int16_t[nSamples];
-	int numBytesRead = AIFF_ReadSamples(ref,samples,nSamples*ref->bitsPerSample/8) ;
+	int numBytesRead = AIFF_ReadSamples(ref,samplesI,nSamples*ref->bitsPerSample/8) ;
 	assert(numBytesRead == nSamples*ref->bitsPerSample/8);
 	// Convert to doubles to use with the fftw
 	samples = new double[nSamples];
-	for (size_t i=0; i<nSamples; ++i)
+	for (int i=0; i<nSamples; ++i)
 	{
 		samples[i] = (double)samplesI[i];
 	}
 	delete [] samplesI;
+
+	AIFF_CloseFile(ref);
 }
 
 // Caller should use fftw_free(out)
@@ -98,11 +118,13 @@ FeatureVector WhaleSoundRecognition::GetFeatures(double * samples, int nSamples)
 {
 	// For the audio file consisting of the samples passed in get the features
 	// to describe it.
-	fftw_complex * out;
-	GetPeriodogramEstimate(samples, nSamples, out);
+	//fftw_complex * out;
+	//GetPeriodogramEstimate(samples, nSamples, out);
 
 	// Do mfcc thing and extract whatever other features we want.
+	//xtract_spectrum()
+	//xtract_mfcc()
 
-	fftw_free(out);
+	//fftw_free(out);
 	return FeatureVector();
 }

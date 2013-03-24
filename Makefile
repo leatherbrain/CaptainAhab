@@ -8,7 +8,7 @@ LIBPATH =	-L/usr/local/lib -L/usr/lib
 
 INCPATH =	-I/usr/local/include -I/usr/include
 
-LIBS =		-lfftw3 -lm -laiff -lboost_system -lboost_regex -lboost_filesystem -lpthread
+LIBS =		-lxtract -lfftw3 -lm -laiff -lboost_system -lboost_regex -lboost_filesystem -lpthread
 
 TARGET =	CaptainAhab
 
