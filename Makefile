@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 CXXFLAGS =	-O2 -g -Wall -fmessage-length=0
 
 OBJS =		CaptainAhab.o WhaleSoundRecognition.o FeatureVector.o
@@ -23,5 +22,4 @@ all:	$(TARGET)
 
 clean:
 	rm -f $(OBJS) $(TARGET)
-=======
->>>>>>> bde40e9c29305060dabfa1e7bc5eb6e39518fae4
+
