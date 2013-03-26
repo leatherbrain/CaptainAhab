@@ -7,6 +7,7 @@
 
 #include "WhaleSoundRecognition.h"
 #include "FeatureVector.h"
+#include "xtract/libxtract.h"
 
 #include <iostream>
 #include <fstream>
@@ -158,16 +159,40 @@ void WhaleSoundRecognition::GetPeriodogramEstimate(double * samples, int nSample
 	fftw_destroy_plan(p);
 }
 
-FeatureVector WhaleSoundRecognition::GetFeatures(double * samples, int nSamples)
+FeatureVector WhaleSoundRecognition::GetFeatures(double *input, int nSamples)
 {
-	// For the audio file consisting of the samples passed in get the features
-	// to describe it.
-	//fftw_complex * out;
-	//GetPeriodogramEstimate(samples, nSamples, out);
+    /* get the mean of the input */
+	double mean;
+    xtract[XTRACT_MEAN](input, nSamples, NULL, &mean);
 
-	// Do mfcc thing and extract whatever other features we want.
-	//xtract_spectrum()
-	//xtract_mfcc()
+    /* get the spectrum */
+    double argd[4];
+    const int SAMPLERATE = 44100;
+    double spectrum[nSamples];
+    argd[0] = SAMPLERATE / (double)nSamples;
+    argd[1] = XTRACT_MAGNITUDE_SPECTRUM;
+    argd[2] = 0.f; /* No DC component */
+    argd[3] = 0.f; /* No Normalisation */
+
+    xtract_init_fft(nSamples, XTRACT_SPECTRUM);
+    xtract[XTRACT_SPECTRUM](input, nSamples, &argd[0], spectrum);
+
+    /* compute the MFCCs */
+    const int MFCC_FREQ_BANDS = 13;
+    int n;
+    xtract_mel_filter mel_filters;
+    mel_filters.n_filters = MFCC_FREQ_BANDS;
+    mel_filters.filters   = (double **)malloc(MFCC_FREQ_BANDS * sizeof(double *));
+    for(n = 0; n < MFCC_FREQ_BANDS; ++n)
+    {
+        mel_filters.filters[n] = (double *)malloc(nSamples * sizeof(double));
+    }
+
+    const int MFCC_FREQ_MIN = 20;
+    const int MFCC_FREQ_MAX = 20000;
+    double mfccs[MFCC_FREQ_BANDS * sizeof(double)];
+    xtract_init_mfcc(nSamples >> 1, SAMPLERATE >> 1, XTRACT_EQUAL_GAIN, MFCC_FREQ_MIN, MFCC_FREQ_MAX, mel_filters.n_filters, mel_filters.filters);
+    xtract_mfcc(spectrum, nSamples >> 1, &mel_filters, mfccs);
 
 	//fftw_free(out);
 	float * data = new float[100];
