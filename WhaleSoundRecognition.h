@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <fftw3.h>
+#include <opencv/ml.h>
 
 class FeatureVector;
 
@@ -22,6 +23,7 @@ public:
 			const std::string & pathToTestData);
 	virtual ~WhaleSoundRecognition();
 	void Train();
+	void Test();
 
 private:
 	void AddTrainingData(const std::string & filename,
@@ -35,6 +37,10 @@ private:
 
 	std::vector<FeatureVector> trainingData;
 	std::vector<bool> trainingDataLabels;
+
+	// Wanted to make this a CvStatModel but this base class does not declare
+	// the train method interface.
+	CvSVM * statModel;
 };
 
 #endif /* WHALESOUNDRECOGNITION_H_ */

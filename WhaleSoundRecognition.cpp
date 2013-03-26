@@ -18,15 +18,21 @@ extern "C"
 }
 #include "xtract/libxtract.h"
 
+#include "boost/filesystem.hpp"
+#include "boost/regex.hpp"
+
+using namespace boost::filesystem;
+
 using namespace std;
 
 WhaleSoundRecognition::WhaleSoundRecognition() {
 	// TODO Auto-generated constructor stub
-
+	statModel = new CvSVM();
 }
 
 WhaleSoundRecognition::~WhaleSoundRecognition() {
 	// TODO Auto-generated destructor stub
+	delete statModel;
 }
 
 void WhaleSoundRecognition::Init(const string & pathToTrainData,
@@ -56,6 +62,44 @@ void WhaleSoundRecognition::Train()
 			string filename = currentLine.substr(0,commaPos);
 			bool containsWhaleSound = currentLine[commaPos+1] == '1';
 			AddTrainingData(pathToTrainingData_ + filename, containsWhaleSound);
+		}
+	}
+
+	if (trainingData.empty())
+	{
+		return;
+	}
+
+	cv::Mat allTrainingData(trainingData.size(), trainingData.front().data_.cols, CV_32FC1);
+	cv::Mat allTrainingLabels(trainingData.size(), 1, CV_32SC1);
+	for (size_t i=0; i<trainingData.size(); ++i)
+	{
+		trainingData[i].data_.copyTo( allTrainingData(cv::Range(i, i+1), cv::Range::all()));
+		allTrainingLabels.at<int>(i,0) = trainingDataLabels[i] ? 1 : 0;
+	}
+
+	statModel->train(allTrainingData, allTrainingLabels);
+
+}
+
+void WhaleSoundRecognition::Test()
+{
+	// Get all filenames ending .aiff
+	path current_dir(pathToTestData_);
+	boost::regex pattern("test[0-9]+.aiff");
+	for (recursive_directory_iterator iter(current_dir), end;
+			iter != end;
+			++iter)
+	{
+		string name = iter->path().leaf().string();
+		if (regex_match(name, pattern))
+		{
+			double * samples;
+			int nSamples;
+			GetRawSamples(iter->path().string(), samples, nSamples);
+			FeatureVector f = GetFeatures(samples, nSamples);
+			float result = statModel->predict(f.data_);
+			cout << "result = " << result << endl;
 		}
 	}
 }
@@ -126,5 +170,8 @@ FeatureVector WhaleSoundRecognition::GetFeatures(double * samples, int nSamples)
 	//xtract_mfcc()
 
 	//fftw_free(out);
-	return FeatureVector();
+	float * data = new float[100];
+	FeatureVector f(data, 100);
+	delete [] data;
+	return f;
 }

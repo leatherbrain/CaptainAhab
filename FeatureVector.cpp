@@ -7,8 +7,8 @@
 
 #include "FeatureVector.h"
 
-FeatureVector::FeatureVector() {
-	// TODO Auto-generated constructor stub
+FeatureVector::FeatureVector(float * data, int n) {
+	data_ = cv::Mat(1, n, CV_32FC1, data);
 
 }
 

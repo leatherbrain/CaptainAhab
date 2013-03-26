@@ -6,14 +6,17 @@ CPPS =		CaptainAhab.cpp WhaleSoundRecognition.cpp FeatureVector.cpp
 
 LIBPATH =	-L/usr/local/lib -L/usr/lib
 
-INCPATH =	-I/usr/local/include -I/usr/include
+INCPATH =	-I/usr/local/include -I/usr/local/include/opencv -I/usr/include
 
-LIBS =		-lxtract -lfftw3 -lm -laiff -lboost_system -lboost_regex -lboost_filesystem -lpthread
+LIBS =		-lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_ml \
+			-lopencv_video -lopencv_features2d -lopencv_calib3d -lopencv_objdetect \
+			-lopencv_contrib -lopencv_legacy -lopencv_flann -lxtract -lfftw3 -lm \
+			-laiff -lboost_system -lboost_regex -lboost_filesystem -lpthread
 
 TARGET =	CaptainAhab
 
 $(TARGET):	$(OBJS)
-	$(CXX) -static $(LIBPATH) $(INCPATH) $(CPPS) $(LIBS) -o $(TARGET) 
+	$(CXX) $(LIBPATH) $(INCPATH) $(CPPS) $(LIBS) -o $(TARGET) 
 
 all:	$(TARGET)
 
