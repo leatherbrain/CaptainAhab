@@ -13,5 +13,6 @@ int main() {
 			"/home/michael/Documents/Kaggle/Whale sounds/data/train.csv",
 			"/home/michael/Documents/Kaggle/Whale sounds/data/test/");
 	w.Train();
+	w.MockTest();
 	return 0;
 }

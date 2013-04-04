@@ -6,10 +6,12 @@
  */
 
 #include "FeatureVector.h"
+#include <iostream>
+
+using namespace std;
 
 FeatureVector::FeatureVector(float * data, int n) {
-	data_ = cv::Mat(1, n, CV_32FC1, data);
-
+	cv::Mat(1, n, CV_32FC1, data).copyTo(data_);
 }
 
 FeatureVector::~FeatureVector() {
